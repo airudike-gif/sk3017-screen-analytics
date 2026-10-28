@@ -1,0 +1,18 @@
+{
+  "source": "https://github.com/xjtulyc/Electric_Vehicle_Crawler",
+  "raw_files": 33,
+  "raw_rows": 34186,
+  "price_parse_missing": 1631,
+  "service_parse_missing": 6356,
+  "city_unknown": 4981,
+  "removed_duplicates": 63,
+  "removed_invalid": 471,
+  "price_outliers": 889,
+  "filled_electricity_price": 1798,
+  "filled_service_price": 7173,
+  "cleaned_rows": 33652,
+  "provinces": 31,
+  "cities": 633,
+  "total_fast_piles": 309180,
+  "total_slow_piles": 36440
+}
