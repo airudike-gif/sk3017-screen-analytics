@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全国充电基础设施运营态势大屏 · SK3017</title>
+  <link rel="stylesheet" href="/static/css/screen.css">
+  <script src="/static/js/echarts.min.js"></script>
+</head>
+<body>
+<div id="screen-stage">
+  <!-- 顶部科技全景 Header -->
+  <header class="screen-header">
+    <div class="brand-section">
+      <div class="brand-logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-4.66l.12-.34h13.77l.11.34V17z"/>
+          <circle cx="7.5" cy="14.5" r="1.5"/>
+          <circle cx="16.5" cy="14.5" r="1.5"/>
+        </svg>
+      </div>
+      <div class="header-title-box">
+        <h1>全国新能源汽车充电基础设施运营态势大屏</h1>
+        <p>National EV Charging Infrastructure Analytics Platform (SK3017)</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <div class="filter-badge-group">
+        <span>当前分析下钻域：</span>
+        <span class="filter-pill" id="activeFilterText">全国视图 (全量 33,652 座站点)</span>
+        <button id="resetFilterBtn" class="reset-filter-btn" onclick="resetFilter()">[重置下钻]</button>
+      </div>
+      <div class="clock-panel">
+        <div class="time-text" id="currentTime">--:--:--</div>
+        <div class="date-text" id="currentDate">----/--/--</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="screen-container">
+    <!-- 顶部 6 大核心 KPI 指标卡 -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">
+          <span>充电站总数</span>
+          <span style="color:var(--accent-sky);">● SQL 聚合</span>
+        </div>
+        <div class="kpi-value-box">
+          <span class="kpi-val" id="kpi_total">0</span>
+          <span class="kpi-unit">座</span>
+        </div>
+        <div class="kpi-trend">SQL COUNT 聚合</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">
+          <span>快充桩总数</span>
+          <span style="color:var(--accent-emerald);">● 直流快充</span>
+        </div>
+        <div class="kpi-value-box">
+          <span class="kpi-val" id="kpi_fast">0</span>
+          <span class="kpi-unit">个</span>
+        </div>
+        <div class="kpi-trend" id="kpi_fast_sub">占充电桩 --%</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">
+          <span>慢充桩总数</span>
+          <span style="color:var(--accent-cyan);">● 交流慢充</span>
+        </div>
+        <div class="kpi-value-box">
+          <span class="kpi-val" id="kpi_slow">0</span>
+          <span class="kpi-unit">个</span>
+        </div>
+        <div class="kpi-trend">按站点地址汇总</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">
+          <span>覆盖城市数</span>
+          <span style="color:var(--accent-indigo);">● 地级行政区</span>
+        </div>
+        <div class="kpi-value-box">
+          <span class="kpi-val" id="kpi_city">0</span>
+          <span class="kpi-unit">个</span>
+        </div>
+        <div class="kpi-trend" id="kpi_city_sub">平均每市 -- 座站点</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">
+          <span>平均电费</span>
+          <span style="color:var(--accent-amber);">● 分时段均价</span>
+        </div>
+        <div class="kpi-value-box">
+          <span class="kpi-val" id="kpi_price">0</span>
+          <span class="kpi-unit">元/度</span>
+        </div>
+        <div class="kpi-trend">原始数据为分时段价格</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">
+          <span>平均服务费</span>
+          <span style="color:var(--accent-rose);">● 运营成本</span>
+        </div>
+        <div class="kpi-value-box">
+          <span class="kpi-val" id="kpi_service">0</span>
+          <span class="kpi-unit">元/度</span>
+        </div>
+        <div class="kpi-trend">与电费合并为充电单价</div>
+      </div>
+    </div>
+
+    <!-- 主数据视口三栏网格 -->
+    <div class="viewport-grid">
+      <!-- 左栏：站点规模 + 快慢充结构 -->
+      <div class="view-col">
+        <div class="card-module">
+          <div class="card-header-bar">
+            <div class="card-header-title">充电站规模分布（按站点桩数分档）</div>
+            <span style="font-size:11px;color:var(--text-muted);">SQL GROUP BY</span>
+          </div>
+          <div class="chart-box" id="chart_brand"></div>
+        </div>
+
+        <div class="card-module">
+          <div class="card-header-bar">
+            <div class="card-header-title">快充 / 慢充桩数量结构</div>
+            <span style="font-size:11px;color:var(--text-muted);">Rose Diagram</span>
+          </div>
+          <div class="chart-box" id="chart_battery"></div>
+        </div>
+      </div>
+
+      <!-- 中栏：全国充电站空间分布大地图（支持点击省份下钻联动） -->
+      <div class="view-col">
+        <div class="card-module">
+          <div class="card-header-bar">
+            <div class="card-header-title">全国各省充电站数量分布（点击省份全局下钻联动）</div>
+            <span style="font-size:11px;color:var(--accent-sky);">GeoJSON Map Engine</span>
+          </div>
+          <div class="chart-box-lg" id="chart_map"></div>
+        </div>
+      </div>
+
+      <!-- 右栏：城市 TOP10 + 电费区间分布 -->
+      <div class="view-col">
+        <div class="card-module">
+          <div class="card-header-bar">
+            <div class="card-header-title">城市充电站数量 TOP10</div>
+            <span style="font-size:11px;color:var(--text-muted);">Bar Chart</span>
+          </div>
+          <div class="chart-box" id="chart_trend" style="height:250px;"></div>
+        </div>
+
+        <div class="card-module">
+          <div class="card-header-bar">
+            <div class="card-header-title">充电电费区间分布（元/度）</div>
+            <span style="font-size:11px;color:var(--text-muted);">Price Histogram</span>
+          </div>
+          <div class="chart-box" id="chart_power" style="height:240px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：充电站明细列表 -->
+    <div class="card-module" style="margin-top:18px;">
+      <div class="card-header-bar">
+        <div class="card-header-title">充电站明细列表（每 8 秒随机抽样刷新）</div>
+        <span style="font-size:11px;color:var(--accent-emerald);">● 自动刷新 (8s)</span>
+      </div>
+      <div class="telemetry-table-wrapper">
+        <table class="telemetry-table">
+          <thead>
+            <tr>
+              <th>站点名称</th>
+              <th>省市</th>
+              <th>快充 / 慢充（个）</th>
+              <th>电费</th>
+              <th>服务费</th>
+              <th>停车</th>
+              <th>开放时间</th>
+            </tr>
+          </thead>
+          <tbody id="telemetry_body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/screen_engine.js"></script>
+</div>
+</body>
+</html>
